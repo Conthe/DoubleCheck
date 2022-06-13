@@ -1,0 +1,10 @@
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\bin\Debug\DoubleCheck.exe.config
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\bin\Debug\DoubleCheck.exe
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\bin\Debug\DoubleCheck.pdb
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.csproj.AssemblyReference.cache
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.Form1.resources
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.Properties.Resources.resources
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.csproj.GenerateResource.cache
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.csproj.CoreCompileInputs.cache
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.exe
+C:\Users\Usuario\source\repos\DoubleCheck\DoubleCheck\obj\Debug\DoubleCheck.pdb
