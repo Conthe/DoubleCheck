@@ -71,28 +71,30 @@ namespace DoubleCheck
 
         static string PegarConteudoEntreAspas(string texto, int linha)
         {
-            int i = 0;
-            for (int x = 0; x < linha; x++) i = texto.IndexOf("\n", i) + 1; // Encontra a linha...
-            int j = texto.IndexOf("\n", i); // Encontra o limite da linha
-            if (j < 0) j = texto.Length - 1;
-
-            string strLinha = texto.Substring(i, j - i); // A linha selecionada
-            i = strLinha.IndexOf("\"") + 1;
-            j = strLinha.IndexOf("\"", i);
-            string teste = strLinha.Remove(i, j - i);
+            int i, j;
+            string strLinha;
+            EncontraIndice(texto, linha, out i, out j, out strLinha);
 
             return strLinha.Substring(i, j - i);
         }
-        static string PegarConteudoForaAspas(string texto, int linha)
+
+        private static void EncontraIndice(string texto, int linha, out int i, out int j, out string strLinha)
         {
-            int i = 0;
+            i = 0;
             for (int x = 0; x < linha; x++) i = texto.IndexOf("\n", i) + 1; // Encontra a linha...
-            int j = texto.IndexOf("\n", i); // Encontra o limite da linha
+            j = texto.IndexOf("\n", i);
             if (j < 0) j = texto.Length - 1;
 
-            string strLinha = texto.Substring(i, j - i); // A linha selecionada
+            strLinha = texto.Substring(i, j - i);
             i = strLinha.IndexOf("\"") + 1;
             j = strLinha.IndexOf("\"", i);
+        }
+
+        static string PegarConteudoForaAspas(string texto, int linha)
+        {
+            int i, j;
+            string strLinha;
+            EncontraIndice(texto, linha, out i, out j, out strLinha);
 
             return strLinha.Remove(i, j - i);
         }
