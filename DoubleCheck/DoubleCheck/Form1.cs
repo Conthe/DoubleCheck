@@ -16,8 +16,8 @@ namespace DoubleCheck
         private void button1_Click(object sender, EventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();
-            string[] efeitos = new string[999];
-            string[] linhas = new string[9999];
+            string[] efeitos = new string[99999];
+            string[] linhas = new string[99999];
             char delimiterChar = '\n';
             List<Linha> listaLinhasArq1 = new List<Linha>();
             List<Linha> listaLinhasArq2 = new List<Linha>();
@@ -40,6 +40,45 @@ namespace DoubleCheck
             }
 
             //TODO: Comparar listaLinhasArq1 e listaLinhasArq2
+            if (listaLinhasArq1.Count == listaLinhasArq2.Count && listaLinhasArq1.Count > 0)
+            {
+                try
+                {
+                    for (int i = 0; i < listaLinhasArq1.Count; i++)
+                    {
+
+                        if (!listaLinhasArq1[i].texto[0][i].Equals(listaLinhasArq2[i].texto[0][i]))
+                        {
+                            throw new Exception();
+                        }
+
+                        if (listaLinhasArq1[i].ListaEfeitos[0].efeitos.Count == listaLinhasArq2[i].ListaEfeitos[0].efeitos.Count && listaLinhasArq2[i].ListaEfeitos[0].efeitos.Count > 0)
+                        {
+                            for (int j = 1; j < listaLinhasArq1[i].ListaEfeitos[0].efeitos[0].Length-1; j++)
+                            {
+                                if(listaLinhasArq1[i].ListaEfeitos[0].efeitos[0][j] != listaLinhasArq2[i].ListaEfeitos[0].efeitos[0][j])
+                                {
+                                    throw new Exception();
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    MessageBox.Show("Informações conferem.");
+                }
+                catch (Exception error)
+                {
+                    MessageBox.Show("Informações não conferem.");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Arquivos não possuem o mesmo tamanho de linhas.");
+            }
         }
 
         private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<Linha> listaLinhasArq1, string dados)
