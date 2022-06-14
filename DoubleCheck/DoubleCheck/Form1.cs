@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace DoubleCheck
@@ -39,46 +40,72 @@ namespace DoubleCheck
                 configuraLinhaEfeitos(ref efeitos, delimiterChar, listaLinhasArq2, dados);
             }
 
-            //TODO: Comparar listaLinhasArq1 e listaLinhasArq2
             if (listaLinhasArq1.Count == listaLinhasArq2.Count && listaLinhasArq1.Count > 0)
             {
                 try
                 {
+                    FormataData(listaLinhasArq1);
+                    FormataData(listaLinhasArq2);
+
                     for (int i = 0; i < listaLinhasArq1.Count; i++)
                     {
-
-                        if (!listaLinhasArq1[i].texto[0][i].Equals(listaLinhasArq2[i].texto[0][i]))
+                        var linhaEncontrada = listaLinhasArq1.Find(a => listaLinhasArq2.Any(x => x.texto == a.texto));
+                        if (linhaEncontrada != null)
                         {
-                            throw new Exception();
-                        }
+                            var linhaArq1 = listaLinhasArq1.Find(a => a.texto.Equals(linhaEncontrada.texto));
+                            var linhaArq2 = listaLinhasArq2.Find(a => a.texto.Equals(linhaEncontrada.texto));
 
-                        if (listaLinhasArq1[i].ListaEfeitos[0].efeitos.Count == listaLinhasArq2[i].ListaEfeitos[0].efeitos.Count && listaLinhasArq2[i].ListaEfeitos[0].efeitos.Count > 0)
-                        {
-                            for (int j = 1; j < listaLinhasArq1[i].ListaEfeitos[0].efeitos[0].Length-1; j++)
-                            {
-                                if(listaLinhasArq1[i].ListaEfeitos[0].efeitos[0][j] != listaLinhasArq2[i].ListaEfeitos[0].efeitos[0][j])
-                                {
-                                    throw new Exception();
-                                }
-                            }
-
+                            ComparaEfeitos(linhaArq1, linhaArq1, i);
                         }
                         else
                         {
-                            throw new Exception();
+                            throw new Exception("Linha não encontrada no outro arquivo. Linha: " + i+1);
                         }
                     }
                     MessageBox.Show("Informações conferem.");
+
+                    
+                    
                 }
                 catch (Exception error)
                 {
-                    MessageBox.Show("Informações não conferem.");
+                    MessageBox.Show(error.Message);
                 }
             }
             else
             {
                 MessageBox.Show("Arquivos não possuem o mesmo tamanho de linhas.");
             }
+        }
+
+        private static void FormataData(List<Linha> listaLinhasArq)
+        {
+            foreach (Linha linha in listaLinhasArq)
+            {
+                linha.texto = linha.texto.Remove(113);
+            }
+        }
+
+        private static void ComparaEfeitos(Linha LinhasArq1, Linha LinhasArq2, int i)
+        {
+            if (LinhasArq1.ListaEfeitos[0].efeitos.Count == LinhasArq2.ListaEfeitos[0].efeitos.Count)
+            {
+                for (int percorreEfeito = 0; percorreEfeito < LinhasArq1.ListaEfeitos[0].efeitos.Count; percorreEfeito++)
+                {
+                    for (int j = 0; j < LinhasArq1.ListaEfeitos[0].efeitos[0].Length; j++)
+                    {
+                        if (LinhasArq1.ListaEfeitos[0].efeitos[0][j] != LinhasArq2.ListaEfeitos[0].efeitos[0][j])
+                        {
+                            throw new Exception("Informações de efeitos não conferem. Linha: " + i+1);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception("Quantidade de efeitos não confere. Linha: " + i);
+            }
+
         }
 
         private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<Linha> listaLinhasArq1, string dados)
@@ -91,8 +118,7 @@ namespace DoubleCheck
                 {
                     Linha linhaAtual = new Linha();
                     string texto = PegarConteudoForaAspas(linha, 0);
-                    string[] configTexto = texto.Split(';');
-                    linhaAtual.texto.Add(configTexto);
+                    linhaAtual.texto = texto;
 
                     Efeitos efeitoLinha = new Efeitos();
                     string efeitoStr = PegarConteudoEntreAspas(linha, 0);

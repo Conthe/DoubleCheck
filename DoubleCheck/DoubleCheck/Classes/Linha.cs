@@ -8,7 +8,7 @@ namespace DoubleCheck.Classes
 {
     public class Linha
     {
-        public List<string[]> texto { get; set; } = new List<string[]>();
+        public string texto { get; set; }
         public List<Efeitos> ListaEfeitos = new List<Efeitos>();
     }
 }
