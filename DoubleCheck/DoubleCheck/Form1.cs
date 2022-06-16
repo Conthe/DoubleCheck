@@ -23,12 +23,14 @@ namespace DoubleCheck
             List<Linha> listaLinhasArq1 = new List<Linha>();
             List<Linha> listaLinhasArq2 = new List<Linha>();
 
-
+            var dado1 = string.Empty;
+            var dado2 = string.Empty;
             if (dlg.ShowDialog() == DialogResult.OK)
             {
                 string fileName;
                 fileName = dlg.FileName;
                 string dados = File.ReadAllText(fileName);
+                dado1 = dados;
                 configuraLinhaEfeitos(ref efeitos, delimiterChar, listaLinhasArq1, dados);
             }
 
@@ -37,6 +39,7 @@ namespace DoubleCheck
                 string fileName;
                 fileName = dlg.FileName;
                 string dados = File.ReadAllText(fileName);
+                dado2 = dados;
                 configuraLinhaEfeitos(ref efeitos, delimiterChar, listaLinhasArq2, dados);
             }
 
@@ -44,33 +47,50 @@ namespace DoubleCheck
             {
                 try
                 {
-                    FormataData(listaLinhasArq1);
-                    FormataData(listaLinhasArq2);
-
-                    for (int i = 0; i < listaLinhasArq1.Count; i++)
+                    foreach(Linha linhaArq1 in listaLinhasArq1)
                     {
-                        var linhaEncontrada = listaLinhasArq1.Find(a => listaLinhasArq2.Any(x => x.texto == a.texto));
-                        if (linhaEncontrada != null)
+                        foreach(Efeito dadosEfeito in linhaArq1.ListaEfeitos)
                         {
-                            var linhaArq1 = listaLinhasArq1.Find(a => a.texto.Equals(linhaEncontrada.texto));
-                            var linhaArq2 = listaLinhasArq2.Find(a => a.texto.Equals(linhaEncontrada.texto));
+                            string idEfeito = dadosEfeito.efeito[0];
+                            bool efeitoEncontradoNoArq2 = false;
+                            foreach (Linha linhaArq2 in listaLinhasArq2)
+                            {
+                                foreach(Efeito dadosEfeitoArq2 in linhaArq2.ListaEfeitos)
+                                {
+                                    if (!efeitoEncontradoNoArq2)
+                                    {
+                                        if(dadosEfeitoArq2.efeito[0] == idEfeito)
+                                        {
+                                            efeitoEncontradoNoArq2 = true;
 
-                            ComparaEfeitos(linhaArq1, linhaArq1, i);
+                                            ComparaCamposEfeito(dadosEfeito, dadosEfeitoArq2);
+                                        }
+                                    }
+                                }
+                            }
+                            if (!efeitoEncontradoNoArq2)
+                            {
+                                throw new Exception("Efeito não encontrado no outro arquivo.");
+                            }
                         }
-                        else
+                        if(linhaArq1.ListaEfeitos.Count == 0)
                         {
-                            throw new Exception("Linha não encontrada no outro arquivo. Linha: " + i+1);
+                            throw new Exception("Existem linhas sem efeitos cadastrados.");
                         }
                     }
                     MessageBox.Show("Informações conferem.");
 
-                    
-                    
+
+
                 }
                 catch (Exception error)
                 {
                     MessageBox.Show(error.Message);
                 }
+            }
+            else if (listaLinhasArq1.Count == 0 || listaLinhasArq2.Count == 0)
+            {
+                MessageBox.Show("É necessário selecionar um arquivo com informações.");
             }
             else
             {
@@ -78,34 +98,28 @@ namespace DoubleCheck
             }
         }
 
-        private static void FormataData(List<Linha> listaLinhasArq)
+        private static void ComparaCamposEfeito(Efeito dadosEfeito, Efeito dadosEfeitoArq2)
         {
-            foreach (Linha linha in listaLinhasArq)
+            for (int percorreCamposEfeito = 0; percorreCamposEfeito < dadosEfeito.efeito.Length; percorreCamposEfeito++)
             {
-                linha.texto = linha.texto.Remove(113);
-            }
-        }
+                if (percorreCamposEfeito == 6)
+                {//Verificação de valores
+                    dadosEfeito.efeito[percorreCamposEfeito] = dadosEfeito.efeito[percorreCamposEfeito].Replace('.', ',');
+                    dadosEfeitoArq2.efeito[percorreCamposEfeito] = dadosEfeitoArq2.efeito[percorreCamposEfeito].Replace('.', ',');
 
-        private static void ComparaEfeitos(Linha LinhasArq1, Linha LinhasArq2, int i)
-        {
-            if (LinhasArq1.ListaEfeitos[0].efeitos.Count == LinhasArq2.ListaEfeitos[0].efeitos.Count)
-            {
-                for (int percorreEfeito = 0; percorreEfeito < LinhasArq1.ListaEfeitos[0].efeitos.Count; percorreEfeito++)
-                {
-                    for (int j = 0; j < LinhasArq1.ListaEfeitos[0].efeitos[0].Length; j++)
+                    double valorConvertidoArq1 = double.Parse(dadosEfeito.efeito[percorreCamposEfeito]);
+                    double valorConvertidoArq2 = double.Parse(dadosEfeitoArq2.efeito[percorreCamposEfeito]);
+
+                    if (valorConvertidoArq1 != valorConvertidoArq2)
                     {
-                        if (LinhasArq1.ListaEfeitos[0].efeitos[0][j] != LinhasArq2.ListaEfeitos[0].efeitos[0][j])
-                        {
-                            throw new Exception("Informações de efeitos não conferem. Linha: " + i+1);
-                        }
+                        throw new Exception("Valores dentro do efeito não conferem.");
                     }
                 }
+                else if (!dadosEfeito.efeito[percorreCamposEfeito].Equals(dadosEfeitoArq2.efeito[percorreCamposEfeito]))
+                {
+                    throw new Exception("Diferença encontrada na comparação dos campos do efeito.");
+                }
             }
-            else
-            {
-                throw new Exception("Quantidade de efeitos não confere. Linha: " + i);
-            }
-
         }
 
         private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<Linha> listaLinhasArq1, string dados)
@@ -118,17 +132,19 @@ namespace DoubleCheck
                 {
                     Linha linhaAtual = new Linha();
                     string texto = PegarConteudoForaAspas(linha, 0);
-                    linhaAtual.texto = texto;
-
-                    Efeitos efeitoLinha = new Efeitos();
+                    linhaAtual.texto = texto.Split(';');
                     string efeitoStr = PegarConteudoEntreAspas(linha, 0);
-                    efeitos = efeitoStr.Split('|');
-                    foreach (string efeito in efeitos)
+                    if (!string.IsNullOrEmpty(efeitoStr))
                     {
-                        string[] efeitoConfigurado = efeito.Split(';');
-                        efeitoLinha.efeitos.Add(efeitoConfigurado);
+                        efeitos = efeitoStr.Split('|');
+                        foreach (string efeito in efeitos)
+                        {
+                            Efeito efeitoLinha = new Efeito();
+                            string[] efeitoConfigurado = efeito.Split(';');
+                            efeitoLinha.efeito = efeitoConfigurado;
+                            linhaAtual.ListaEfeitos.Add(efeitoLinha);
+                        }
                     }
-                    linhaAtual.ListaEfeitos.Add(efeitoLinha);
                     listaLinhasArq1.Add(linhaAtual);
                 }
             }
@@ -136,11 +152,16 @@ namespace DoubleCheck
 
         static string PegarConteudoEntreAspas(string texto, int linha)
         {
-            int i, j;
-            string strLinha;
-            EncontraIndice(texto, linha, out i, out j, out strLinha);
+            var existeAspas = texto.Any(x => x == '"');
+            if (existeAspas)
+            {
+                int i, j;
+                string strLinha;
+                EncontraIndice(texto, linha, out i, out j, out strLinha);
 
-            return strLinha.Substring(i, j - i);
+                return strLinha.Substring(i, j - i);
+            }
+            return string.Empty;
         }
 
         private static void EncontraIndice(string texto, int linha, out int i, out int j, out string strLinha)
@@ -157,11 +178,16 @@ namespace DoubleCheck
 
         static string PegarConteudoForaAspas(string texto, int linha)
         {
-            int i, j;
-            string strLinha;
-            EncontraIndice(texto, linha, out i, out j, out strLinha);
+            var existeAspas = texto.Any(x => x == '"');
+            if (existeAspas)
+            {
+                int i, j;
+                string strLinha;
+                EncontraIndice(texto, linha, out i, out j, out strLinha);
 
-            return strLinha.Remove(i, j - i);
+                return strLinha.Remove(i, j - i);
+            }
+            return texto;
         }
     }
 }

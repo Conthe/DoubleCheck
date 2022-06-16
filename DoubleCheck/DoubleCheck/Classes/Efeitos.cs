@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace DoubleCheck.Classes
 {
-    public class Efeitos
+    public class Efeito
     {
-        public List<string[]> efeitos { get; set; } = new List<string[]>();
+        public string[] efeito { get; set; }
     }
+    
 }
