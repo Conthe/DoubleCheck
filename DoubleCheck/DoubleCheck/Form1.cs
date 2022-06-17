@@ -20,18 +20,15 @@ namespace DoubleCheck
             string[] efeitos = new string[99999];
             string[] linhas = new string[99999];
             char delimiterChar = '\n';
-            List<Linha> listaLinhasArq1 = new List<Linha>();
-            List<Linha> listaLinhasArq2 = new List<Linha>();
+            List<UR> listaUnidadesRecebiveisArq1 = new List<UR>();
+            List<UR> listaUnidadesRecebiveisArq2 = new List<UR>();
 
-            var dado1 = string.Empty;
-            var dado2 = string.Empty;
             if (dlg.ShowDialog() == DialogResult.OK)
             {
                 string fileName;
                 fileName = dlg.FileName;
                 string dados = File.ReadAllText(fileName);
-                dado1 = dados;
-                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaLinhasArq1, dados);
+                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaUnidadesRecebiveisArq1, dados);
             }
 
             if (dlg.ShowDialog() == DialogResult.OK)
@@ -39,56 +36,36 @@ namespace DoubleCheck
                 string fileName;
                 fileName = dlg.FileName;
                 string dados = File.ReadAllText(fileName);
-                dado2 = dados;
-                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaLinhasArq2, dados);
+                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaUnidadesRecebiveisArq2, dados);
             }
 
-            if (listaLinhasArq1.Count == listaLinhasArq2.Count && listaLinhasArq1.Count > 0)
+            if (listaUnidadesRecebiveisArq1.Count == listaUnidadesRecebiveisArq2.Count && listaUnidadesRecebiveisArq2.Count > 0)
             {
                 try
                 {
-                    foreach(Linha linhaArq1 in listaLinhasArq1)
-                    {
-                        foreach(Efeito dadosEfeito in linhaArq1.ListaEfeitos)
-                        {
-                            string idEfeito = dadosEfeito.efeito[0];
-                            bool efeitoEncontradoNoArq2 = false;
-                            foreach (Linha linhaArq2 in listaLinhasArq2)
-                            {
-                                foreach(Efeito dadosEfeitoArq2 in linhaArq2.ListaEfeitos)
-                                {
-                                    if (!efeitoEncontradoNoArq2)
-                                    {
-                                        if(dadosEfeitoArq2.efeito[0] == idEfeito)
-                                        {
-                                            efeitoEncontradoNoArq2 = true;
+                    List<UR> listaOrdenada1 = new List<UR>();
+                    List<UR> listaOrdenada2 = new List<UR>();
 
-                                            ComparaCamposEfeito(dadosEfeito, dadosEfeitoArq2);
-                                        }
-                                    }
-                                }
-                            }
-                            if (!efeitoEncontradoNoArq2)
-                            {
-                                throw new Exception("Efeito não encontrado no outro arquivo.");
-                            }
-                        }
-                        if(linhaArq1.ListaEfeitos.Count == 0)
-                        {
-                            throw new Exception("Existem linhas sem efeitos cadastrados.");
-                        }
-                    }
+                    listaOrdenada1 = listaUnidadesRecebiveisArq1.OrderBy(x => x.DataLiquidacao)
+                        .ThenBy(x => x.UsuarioFinalRecebedor)
+                        .ThenBy(x => x.CredenciadoraOuSubCred)
+                        .ThenBy(x => x.ArranjoDePagamento).ToList();
+
+                    listaOrdenada2 = listaUnidadesRecebiveisArq2.OrderBy(x => x.DataLiquidacao)
+                        .ThenBy(x => x.UsuarioFinalRecebedor)
+                        .ThenBy(x => x.CredenciadoraOuSubCred)
+                        .ThenBy(x => x.ArranjoDePagamento).ToList();
+
+                    ComparaListasAP008(listaOrdenada1, listaOrdenada2);
+
                     MessageBox.Show("Informações conferem.");
-
-
-
                 }
                 catch (Exception error)
                 {
                     MessageBox.Show(error.Message);
                 }
             }
-            else if (listaLinhasArq1.Count == 0 || listaLinhasArq2.Count == 0)
+            else if (listaUnidadesRecebiveisArq1.Count == 0 || listaUnidadesRecebiveisArq2.Count == 0)
             {
                 MessageBox.Show("É necessário selecionar um arquivo com informações.");
             }
@@ -98,31 +75,113 @@ namespace DoubleCheck
             }
         }
 
-        private static void ComparaCamposEfeito(Efeito dadosEfeito, Efeito dadosEfeitoArq2)
+        private static void ComparaListasAP008(List<UR> listaOrdenada1, List<UR> listaOrdenada2)
         {
-            for (int percorreCamposEfeito = 0; percorreCamposEfeito < dadosEfeito.efeito.Length; percorreCamposEfeito++)
+            for (int i = 0; i < listaOrdenada1.Count; i++)
             {
-                if (percorreCamposEfeito == 6)
-                {//Verificação de valores
-                    dadosEfeito.efeito[percorreCamposEfeito] = dadosEfeito.efeito[percorreCamposEfeito].Replace('.', ',');
-                    dadosEfeitoArq2.efeito[percorreCamposEfeito] = dadosEfeitoArq2.efeito[percorreCamposEfeito].Replace('.', ',');
+                if (!listaOrdenada1[i].UsuarioFinalRecebedor.Equals(listaOrdenada2[i].UsuarioFinalRecebedor))
+                {
+                    throw new Exception("UsuarioFinalRecebedor não corresponde.");
+                }
+                else if (!listaOrdenada1[i].CredenciadoraOuSubCred.Equals(listaOrdenada2[i].CredenciadoraOuSubCred))
+                {
+                    throw new Exception("CredenciadoraOuSubCred não corresponde");
+                }
+                else if (!listaOrdenada1[i].ArranjoDePagamento.Equals(listaOrdenada2[i].ArranjoDePagamento))
+                {
+                    throw new Exception("ArranjoDePagamento não corresponde");
+                }
+                else if (!listaOrdenada1[i].DataLiquidacao.Equals(listaOrdenada2[i].DataLiquidacao))
+                {
+                    throw new Exception("DataLiquidacao não corresponde");
+                }
+                ComparaEfeitosUR(listaOrdenada1, listaOrdenada2, i);
+            }
+        }
 
-                    double valorConvertidoArq1 = double.Parse(dadosEfeito.efeito[percorreCamposEfeito]);
-                    double valorConvertidoArq2 = double.Parse(dadosEfeitoArq2.efeito[percorreCamposEfeito]);
-
-                    if (valorConvertidoArq1 != valorConvertidoArq2)
+        private static void ComparaEfeitosUR(List<UR> listaOrdenada1, List<UR> listaOrdenada2, int i)
+        {
+            for (int j = 0; j < listaOrdenada1[i].listaEfeitos.Count; j++)
+            {
+                try
+                {
+                    if (!listaOrdenada1[i].listaEfeitos[j].Protocolo.Equals(listaOrdenada2[i].listaEfeitos[j].Protocolo))
                     {
-                        throw new Exception("Valores dentro do efeito não conferem.");
+                        throw new Exception("Protocolo do efeito não corresponde. Protocolo do Efeito: " + listaOrdenada1[i].listaEfeitos[j].Protocolo);
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].IndicadorEfeitosContrato.Equals(listaOrdenada2[i].listaEfeitos[j].IndicadorEfeitosContrato))
+                    {
+                        throw new Exception("IndicadorEfeitosContrato do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].EntidadeRegistradora.Equals(listaOrdenada2[i].listaEfeitos[j].EntidadeRegistradora))
+                    {
+                        throw new Exception("EntidadeRegistradora do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].TipoEfeito.Equals(listaOrdenada2[i].listaEfeitos[j].TipoEfeito))
+                    {
+                        throw new Exception("TipoEfeito do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].BeneficiarioTitular.Equals(listaOrdenada2[i].listaEfeitos[j].BeneficiarioTitular))
+                    {
+                        throw new Exception("BeneficiarioTitular do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].RegrasDivisao.Equals(listaOrdenada2[i].listaEfeitos[j].RegrasDivisao))
+                    {
+                        throw new Exception("RegrasDivisao do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].ValorComprometido.Equals(listaOrdenada2[i].listaEfeitos[j].ValorComprometido))
+                    {
+                        string valorStr1 = listaOrdenada1[i].listaEfeitos[j].ValorComprometido.Replace('.', ',');
+                        string valorStr2 = listaOrdenada2[i].listaEfeitos[j].ValorComprometido.Replace('.', ',');
+                        double valorArq1 = double.Parse(valorStr1);
+                        double valorArq2 = double.Parse(valorStr2);
+                        if (!valorArq1.Equals(valorArq2))
+                        {
+                            throw new Exception("Valor do efeito não corresponde");
+                        }
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].DocumentoTitularDomicilio.Equals(listaOrdenada2[i].listaEfeitos[j].DocumentoTitularDomicilio))
+                    {
+                        throw new Exception("DocumentoTitularDomicilio do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].TipoConta.Equals(listaOrdenada2[i].listaEfeitos[j].TipoConta))
+                    {
+                        throw new Exception("TipoConta do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].COMPE.Equals(listaOrdenada2[i].listaEfeitos[j].COMPE))
+                    {
+                        throw new Exception("COMPE do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].ISPB.Equals(listaOrdenada2[i].listaEfeitos[j].ISPB))
+                    {
+                        throw new Exception("ISPB do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].Agencia.Equals(listaOrdenada2[i].listaEfeitos[j].Agencia))
+                    {
+                        throw new Exception("Agencia do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].NumeroContaPagamento.Equals(listaOrdenada2[i].listaEfeitos[j].NumeroContaPagamento))
+                    {
+                        throw new Exception("NumeroContaPagamento do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].NomeTitularDomicilio.Equals(listaOrdenada2[i].listaEfeitos[j].NomeTitularDomicilio))
+                    {
+                        throw new Exception("NomeTitularDomicilio do efeito não corresponde");
+                    }
+                    if (!listaOrdenada1[i].listaEfeitos[j].IDContrato.Equals(listaOrdenada2[i].listaEfeitos[j].IDContrato))
+                    {
+                        throw new Exception("IDContrato do efeito não corresponde");
                     }
                 }
-                else if (!dadosEfeito.efeito[percorreCamposEfeito].Equals(dadosEfeitoArq2.efeito[percorreCamposEfeito]))
+                catch (Exception error)
                 {
-                    throw new Exception("Diferença encontrada na comparação dos campos do efeito.");
+                    throw new Exception(error.Message);
                 }
             }
         }
 
-        private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<Linha> listaLinhasArq1, string dados)
+
+        private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<UR> listaUnidadeRecebiveis, string dados)
         {
             string[] linhas = dados.Split(delimiterChar);
             string infoLinha = string.Empty;
@@ -130,9 +189,9 @@ namespace DoubleCheck
             {
                 if (!string.IsNullOrEmpty(linha))
                 {
-                    Linha linhaAtual = new Linha();
                     string texto = PegarConteudoForaAspas(linha, 0);
-                    linhaAtual.texto = texto.Split(';');
+                    var urInfo = texto.Split(';');
+                    UR unidadeRecebivel = new UR(urInfo[0], urInfo[2], urInfo[3], DateTime.Parse(urInfo[4]));
                     string efeitoStr = PegarConteudoEntreAspas(linha, 0);
                     if (!string.IsNullOrEmpty(efeitoStr))
                     {
@@ -141,13 +200,32 @@ namespace DoubleCheck
                         {
                             Efeito efeitoLinha = new Efeito();
                             string[] efeitoConfigurado = efeito.Split(';');
-                            efeitoLinha.efeito = efeitoConfigurado;
-                            linhaAtual.ListaEfeitos.Add(efeitoLinha);
+                            PopulaCamposEfeito(efeitoLinha, efeitoConfigurado);
+                            unidadeRecebivel.listaEfeitos.Add(efeitoLinha);
                         }
                     }
-                    listaLinhasArq1.Add(linhaAtual);
+                    listaUnidadeRecebiveis.Add(unidadeRecebivel);
                 }
             }
+        }
+
+        private static void PopulaCamposEfeito(Efeito efeitoLinha, string[] efeitoConfigurado)
+        {
+            efeitoLinha.Protocolo = efeitoConfigurado[0];
+            efeitoLinha.IndicadorEfeitosContrato = efeitoConfigurado[1];
+            efeitoLinha.EntidadeRegistradora = efeitoConfigurado[2];
+            efeitoLinha.TipoEfeito = efeitoConfigurado[3];
+            efeitoLinha.BeneficiarioTitular = efeitoConfigurado[4];
+            efeitoLinha.RegrasDivisao = efeitoConfigurado[5];
+            efeitoLinha.ValorComprometido = efeitoConfigurado[6];
+            efeitoLinha.DocumentoTitularDomicilio = efeitoConfigurado[7];
+            efeitoLinha.TipoConta = efeitoConfigurado[8];
+            efeitoLinha.COMPE = efeitoConfigurado[9];
+            efeitoLinha.ISPB = efeitoConfigurado[10];
+            efeitoLinha.Agencia = efeitoConfigurado[11];
+            efeitoLinha.NumeroContaPagamento = efeitoConfigurado[12];
+            efeitoLinha.NomeTitularDomicilio = efeitoConfigurado[13];
+            efeitoLinha.IDContrato = efeitoConfigurado[14];
         }
 
         static string PegarConteudoEntreAspas(string texto, int linha)

@@ -75,8 +75,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Efeitos.cs" />
+    <Compile Include="Classes\Efeito.cs" />
     <Compile Include="Classes\Linha.cs" />
+    <Compile Include="Classes\UR.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
