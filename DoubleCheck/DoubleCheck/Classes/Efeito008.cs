@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DoubleCheck.Classes
 {
-    public class Efeito
+    public class Efeito008
     {
         public string Protocolo { get; set; }
         public string IndicadorEfeitosContrato { get; set; }

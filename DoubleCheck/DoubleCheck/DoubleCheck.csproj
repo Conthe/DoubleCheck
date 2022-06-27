@@ -24,7 +24,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <AutorunEnabled>true</AutorunEnabled>
-    <ApplicationRevision>2</ApplicationRevision>
+    <ApplicationRevision>4</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -75,9 +75,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Efeito.cs" />
-    <Compile Include="Classes\Linha.cs" />
-    <Compile Include="Classes\UR.cs" />
+    <Compile Include="Classes\Efeito008.cs" />
+    <Compile Include="Classes\UR008.cs" />
+    <Compile Include="Classes\UR009.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

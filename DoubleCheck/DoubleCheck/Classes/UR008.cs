@@ -6,21 +6,24 @@ using System.Threading.Tasks;
 
 namespace DoubleCheck.Classes
 {
-    public class UR
+    public class UR008
     {
         public string CredenciadoraOuSubCred { get; set; }
+        public string ConstituicaoUR { get; set; }
         public string UsuarioFinalRecebedor { get; set; }
         public string ArranjoDePagamento { get; set; }
-        public DateTime DataLiquidacao { get; set; }
+        public string DataLiquidacao { get; set; }
 
-        public List<Efeito> listaEfeitos { get; set; } = new List<Efeito>();
 
-        public UR(string credenciadoraOuSubCred, string usuarioFinalRecebedor, string arranjoDePagamento, DateTime dataLiquidacao)
+        public List<Efeito008> listaEfeitos { get; set; } = new List<Efeito008>();
+
+        public UR008(string credenciadoraOuSubCred, string constituicaoUR, string usuarioFinalRecebedor, string arranjoDePagamento, string dataLiquidacao)
         {
             CredenciadoraOuSubCred = credenciadoraOuSubCred;
             UsuarioFinalRecebedor = usuarioFinalRecebedor;
             ArranjoDePagamento = arranjoDePagamento;
             DataLiquidacao = dataLiquidacao;
+            ConstituicaoUR = constituicaoUR;
         }
     }
 }

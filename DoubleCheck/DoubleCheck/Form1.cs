@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Windows.Forms;
 
 namespace DoubleCheck
@@ -14,174 +16,513 @@ namespace DoubleCheck
             InitializeComponent();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        static int sucesso = 0;
+        static int falha = 0;
+        private async void btn_ComparaArqvs_Click(object sender, EventArgs e)
+        {
+
+            switch (cmb_EscolheAP.SelectedItem)
+            {
+                case ("AP008"):
+                    string[] efeitos = new string[99999];
+                    char delimiterChar = '\n';
+                    StreamReader sr1;
+                    StreamReader sr2;
+                    string fileName1 = string.Empty;
+                    string fileName2 = string.Empty;
+                    long cont1 = 0;
+                    long cont2 = 0;
+
+                    sucesso = 0;
+                    falha = 0;
+
+                    SelecionarArquivos(ref fileName1, ref fileName2, ref cont1, ref cont2);
+
+                    double contadorPorcentagem = 0;
+                    if (cont1 > cont2)
+                    {
+                        sr1 = new StreamReader(fileName2);
+                        sr2 = new StreamReader(fileName1);
+                        contadorPorcentagem = cont2 * 0.30;
+                    }
+                    else
+                    {
+                        sr1 = new StreamReader(fileName1);
+                        sr2 = new StreamReader(fileName2);
+                        contadorPorcentagem = cont1 * 0.30;
+                    }
+
+                    int contadorAmostragem = 0;
+
+                    while (!sr1.EndOfStream)
+                    {
+                        if (contadorAmostragem < (int)contadorPorcentagem)
+                        {
+                            string linha = sr1.ReadLine();
+                            var urArq1 = configuraLinhaEfeitos(ref efeitos, delimiterChar, linha);
+                            var csv = urArq1.CredenciadoraOuSubCred + ";" + urArq1.ConstituicaoUR + ";" + urArq1.UsuarioFinalRecebedor + ";" + urArq1.ArranjoDePagamento + ";" + urArq1.DataLiquidacao + ";";
+                            string linha2 = string.Empty;
+                            while (!sr2.EndOfStream)
+                            {
+                                string linha3 = sr2.ReadLine();
+                                if (linha3.StartsWith(csv))
+                                {
+                                    linha2 = linha3;
+                                    break;
+                                }
+                            }
+                            sr2 = new StreamReader(fileName2);
+                            if (linha2 == string.Empty)
+                            {
+                                LogError008(urArq1);
+                            }
+                            else
+                            {
+                                var urArq2 = configuraLinhaEfeitos(ref efeitos, delimiterChar, linha2);
+                                ComparaAP008(urArq1, urArq2);
+                                sucesso++;
+                            }
+                            contadorAmostragem++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    MessageBox.Show("A comparação foi finalizada. Sucesso: " + sucesso + "." + " Falhas: " + falha + "." + " Taxa de Amostragem: " + (int)contadorPorcentagem + ".");
+                    break;
+                case ("AP009"):
+                    fileName1 = string.Empty;
+                    fileName2 = string.Empty;
+                    cont1 = 0;
+                    cont2 = 0;
+                    sucesso = 0;
+                    falha = 0;
+
+                    SelecionarArquivos(ref fileName1, ref fileName2, ref cont1, ref cont2);
+
+                    contadorPorcentagem = 0;
+                    if (cont1 > cont2)
+                    {
+                        sr1 = new StreamReader(fileName2);
+                        sr2 = new StreamReader(fileName1);
+                        contadorPorcentagem = cont2 * 0.30;
+                    }
+                    else
+                    {
+                        sr1 = new StreamReader(fileName1);
+                        sr2 = new StreamReader(fileName2);
+                        contadorPorcentagem = cont1 * 0.30;
+                    }
+
+                    contadorAmostragem = 0;
+                    while (!sr1.EndOfStream)
+                    {
+                        if (contadorAmostragem < (int)contadorPorcentagem)
+                        {
+                            string linha = sr1.ReadLine();
+                            var urArq1 = ConfiguraArq009(linha);
+                            string linha2 = string.Empty;
+
+                            while (!sr2.EndOfStream)
+                            {
+                                string linha3 = sr2.ReadLine();
+                                if (linha3.StartsWith(linha))
+                                {
+                                    linha2 = linha3;
+                                    break;
+                                }
+                            }
+                            sr2 = new StreamReader(fileName2);
+                            if (linha2 == string.Empty)
+                            {
+                                LogError009(urArq1);
+                            }
+                            else
+                            {
+                                var urArq2 = ConfiguraArq009(linha2);
+                                ComparaAP009(urArq1, urArq2);
+                                sucesso++;
+                            }
+                            contadorAmostragem++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    MessageBox.Show("A comparação foi finalizada. Sucesso: " + sucesso + "." + " Falhas: " + falha + "." + " Taxa de Amostragem: " + (int)contadorPorcentagem + ".");
+                    break;
+                case ("AP010"):
+                    break;
+                case ("AP011"):
+                    break;
+                case ("AP012"):
+                    break;
+
+            }
+
+        }
+
+        private void ComparaAP009(UR009 urArq1, UR009 urArq2)
+        {
+            bool erroEncontrado = false;
+
+            if(!urArq1.RefExterna.Equals(urArq2.RefExterna))
+            {
+                LogError009(urArq1);
+                erroEncontrado = true;
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.DataReferencia.Equals(urArq2.DataReferencia))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.CredenciadoraOuSub.Equals(urArq2.CredenciadoraOuSub))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.UsuarioFinalRecebedor.Equals(urArq2.UsuarioFinalRecebedor))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.ArranjoDePagamento.Equals(urArq2.ArranjoDePagamento))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.DataLiquidacao.Equals(urArq2.DataLiquidacao))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.TitularUnidadeRecebivel.Equals(urArq2.TitularUnidadeRecebivel))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.ValorBrutoTotal.Equals(urArq2.ValorBrutoTotal))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.ValorConstituidoTotal.Equals(urArq2.ValorConstituidoTotal))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.ValorConstituidoPreContratado.Equals(urArq2.ValorConstituidoPreContratado))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.ValorLiquidadoPosContratadas.Equals(urArq2.ValorLiquidadoPosContratadas))
+                {
+                    LogError009(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+        }
+
+        private void LogError009(UR009 arqErro)
+        {
+
+            string dir = @"C:\LogErrorAPs";
+            // If directory does not exist, create it
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            StreamWriter sw = new StreamWriter(@"C:\LogErrorAPs\log009.txt", true);
+            sw.WriteLine(arqErro.RefExterna + ";" 
+                + arqErro.DataReferencia + ";" 
+                + arqErro.CredenciadoraOuSub + ";" 
+                + arqErro.UsuarioFinalRecebedor + ";"
+                + arqErro.ArranjoDePagamento + ";"
+                + arqErro.DataLiquidacao + ";"
+                + arqErro.TitularUnidadeRecebivel + ";"
+                + arqErro.ValorBrutoTotal + ";"
+                + arqErro.ValorConstituidoTotal + ";"
+                + arqErro.ValorConstituidoPreContratado + ";"
+                + arqErro.ValorLiquidadoPosContratadas);
+            sw.Close();
+            falha++;
+        }
+
+        private UR009 ConfiguraArq009(string linha)
+        {
+            var infoUr = linha.Split(';');
+            UR009 ur = new UR009(infoUr[0], infoUr[1], infoUr[2], infoUr[3], infoUr[4], infoUr[5], infoUr[6], infoUr[7], infoUr[8], infoUr[9], infoUr[10]);
+            return ur;
+        }
+
+        private void SelecionarArquivos(ref string fileName1, ref string fileName2, ref long cont1, ref long cont2)
         {
             OpenFileDialog dlg = new OpenFileDialog();
-            string[] efeitos = new string[99999];
-            string[] linhas = new string[99999];
-            char delimiterChar = '\n';
-            List<UR> listaUnidadesRecebiveisArq1 = new List<UR>();
-            List<UR> listaUnidadesRecebiveisArq2 = new List<UR>();
-
             if (dlg.ShowDialog() == DialogResult.OK)
             {
-                string fileName;
-                fileName = dlg.FileName;
-                string dados = File.ReadAllText(fileName);
-                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaUnidadesRecebiveisArq1, dados);
+                fileName1 = dlg.FileName;
+                FileInfo fi = new FileInfo(fileName1);
+                cont1 = CountLinesLINQ(fi);
             }
 
             if (dlg.ShowDialog() == DialogResult.OK)
             {
-                string fileName;
-                fileName = dlg.FileName;
-                string dados = File.ReadAllText(fileName);
-                configuraLinhaEfeitos(ref efeitos, delimiterChar, listaUnidadesRecebiveisArq2, dados);
+                fileName2 = dlg.FileName;
+                FileInfo fi = new FileInfo(fileName2);
+                cont2 = CountLinesLINQ(fi);
             }
+        }
 
-            if (listaUnidadesRecebiveisArq1.Count == listaUnidadesRecebiveisArq2.Count && listaUnidadesRecebiveisArq2.Count > 0)
+        public long CountLinesLINQ(FileInfo file)
+            => File.ReadLines(file.FullName).Count();
+
+        private static void ComparaAP008(UR008 urArq1, UR008 urArq2)
+        {
+            bool erroEncontrado = false;
+            if (!urArq1.UsuarioFinalRecebedor.Equals(urArq2.UsuarioFinalRecebedor))
             {
-                try
+                LogError008(urArq1);
+                erroEncontrado = true;
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.CredenciadoraOuSubCred.Equals(urArq2.CredenciadoraOuSubCred))
                 {
-                    List<UR> listaOrdenada1 = new List<UR>();
-                    List<UR> listaOrdenada2 = new List<UR>();
-
-                    listaOrdenada1 = listaUnidadesRecebiveisArq1.OrderBy(x => x.DataLiquidacao)
-                        .ThenBy(x => x.UsuarioFinalRecebedor)
-                        .ThenBy(x => x.CredenciadoraOuSubCred)
-                        .ThenBy(x => x.ArranjoDePagamento).ToList();
-
-                    listaOrdenada2 = listaUnidadesRecebiveisArq2.OrderBy(x => x.DataLiquidacao)
-                        .ThenBy(x => x.UsuarioFinalRecebedor)
-                        .ThenBy(x => x.CredenciadoraOuSubCred)
-                        .ThenBy(x => x.ArranjoDePagamento).ToList();
-
-                    ComparaListasAP008(listaOrdenada1, listaOrdenada2);
-
-                    MessageBox.Show("Informações conferem.");
-                }
-                catch (Exception error)
-                {
-                    MessageBox.Show(error.Message);
+                    LogError008(urArq1);
+                    erroEncontrado = true;
                 }
             }
-            else if (listaUnidadesRecebiveisArq1.Count == 0 || listaUnidadesRecebiveisArq2.Count == 0)
+            if (!erroEncontrado)
             {
-                MessageBox.Show("É necessário selecionar um arquivo com informações.");
+                if (!urArq1.ArranjoDePagamento.Equals(urArq2.ArranjoDePagamento))
+                {
+                    LogError008(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                if (!urArq1.DataLiquidacao.Equals(urArq2.DataLiquidacao))
+                {
+                    LogError008(urArq1);
+                    erroEncontrado = true;
+                }
+            }
+            if (!erroEncontrado)
+            {
+                ComparaEfeitosUR(urArq1, urArq2);
+            }
+
+
+        }
+
+        private static void ComparaEfeitosUR(UR008 urArq1, UR008 urArq2)
+        {
+            if (urArq1.listaEfeitos.Count == urArq2.listaEfeitos.Count)
+            {
+                for (int j = 0; j < urArq1.listaEfeitos.Count; j++)
+                {
+                    try
+                    {
+                        bool erroEncontrado = false;
+                        if (!urArq1.listaEfeitos[j].Protocolo.Equals(urArq2.listaEfeitos[j].Protocolo))
+                        {
+                            LogError008(urArq1);
+                            erroEncontrado = true;
+                            break;
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].IndicadorEfeitosContrato.Equals(urArq2.listaEfeitos[j].IndicadorEfeitosContrato))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].EntidadeRegistradora.Equals(urArq2.listaEfeitos[j].EntidadeRegistradora))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].TipoEfeito.Equals(urArq2.listaEfeitos[j].TipoEfeito))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].BeneficiarioTitular.Equals(urArq2.listaEfeitos[j].BeneficiarioTitular))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].RegrasDivisao.Equals(urArq2.listaEfeitos[j].RegrasDivisao))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].ValorComprometido.Equals(urArq2.listaEfeitos[j].ValorComprometido))
+                            {
+                                string valorStr1 = urArq1.listaEfeitos[j].ValorComprometido.Replace('.', ',');
+                                string valorStr2 = urArq2.listaEfeitos[j].ValorComprometido.Replace('.', ',');
+                                double valorArq1 = double.Parse(valorStr1);
+                                double valorArq2 = double.Parse(valorStr2);
+                                if (!valorArq1.Equals(valorArq2))
+                                {
+                                    LogError008(urArq1);
+                                    erroEncontrado = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].DocumentoTitularDomicilio.Equals(urArq2.listaEfeitos[j].DocumentoTitularDomicilio))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].TipoConta.Equals(urArq2.listaEfeitos[j].TipoConta))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].COMPE.Equals(urArq2.listaEfeitos[j].COMPE))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].ISPB.Equals(urArq2.listaEfeitos[j].ISPB))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].Agencia.Equals(urArq2.listaEfeitos[j].Agencia))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].NumeroContaPagamento.Equals(urArq2.listaEfeitos[j].NumeroContaPagamento))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].NomeTitularDomicilio.Equals(urArq2.listaEfeitos[j].NomeTitularDomicilio))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                        if (!erroEncontrado)
+                        {
+                            if (!urArq1.listaEfeitos[j].IDContrato.Equals(urArq2.listaEfeitos[j].IDContrato))
+                            {
+                                LogError008(urArq1);
+                                erroEncontrado = true;
+                                break;
+                            }
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        throw new Exception(error.Message);
+                    }
+                }
             }
             else
             {
-                MessageBox.Show("Arquivos não possuem o mesmo tamanho de linhas.");
+                LogError008(urArq1);
             }
         }
 
-        private static void ComparaListasAP008(List<UR> listaOrdenada1, List<UR> listaOrdenada2)
+        private static void LogError008(UR008 arqErro)
         {
-            for (int i = 0; i < listaOrdenada1.Count; i++)
+            string dir = @"C:\LogErrorAPs";
+            // If directory does not exist, create it
+            if (!Directory.Exists(dir))
             {
-                if (!listaOrdenada1[i].UsuarioFinalRecebedor.Equals(listaOrdenada2[i].UsuarioFinalRecebedor))
-                {
-                    throw new Exception("UsuarioFinalRecebedor não corresponde.");
-                }
-                else if (!listaOrdenada1[i].CredenciadoraOuSubCred.Equals(listaOrdenada2[i].CredenciadoraOuSubCred))
-                {
-                    throw new Exception("CredenciadoraOuSubCred não corresponde");
-                }
-                else if (!listaOrdenada1[i].ArranjoDePagamento.Equals(listaOrdenada2[i].ArranjoDePagamento))
-                {
-                    throw new Exception("ArranjoDePagamento não corresponde");
-                }
-                else if (!listaOrdenada1[i].DataLiquidacao.Equals(listaOrdenada2[i].DataLiquidacao))
-                {
-                    throw new Exception("DataLiquidacao não corresponde");
-                }
-                ComparaEfeitosUR(listaOrdenada1, listaOrdenada2, i);
+                Directory.CreateDirectory(dir);
             }
+            StreamWriter sw = new StreamWriter(@"C:\LogErrorAPs\log008.txt", true);
+            sw.WriteLine(arqErro.CredenciadoraOuSubCred + ";" + arqErro.ConstituicaoUR + ";" + arqErro.UsuarioFinalRecebedor + ";" + arqErro.ArranjoDePagamento + ";" + arqErro.DataLiquidacao + ";");
+            sw.Close();
+            falha++;
         }
-
-        private static void ComparaEfeitosUR(List<UR> listaOrdenada1, List<UR> listaOrdenada2, int i)
-        {
-            for (int j = 0; j < listaOrdenada1[i].listaEfeitos.Count; j++)
-            {
-                try
-                {
-                    if (!listaOrdenada1[i].listaEfeitos[j].Protocolo.Equals(listaOrdenada2[i].listaEfeitos[j].Protocolo))
-                    {
-                        throw new Exception("Protocolo do efeito não corresponde. Protocolo do Efeito: " + listaOrdenada1[i].listaEfeitos[j].Protocolo);
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].IndicadorEfeitosContrato.Equals(listaOrdenada2[i].listaEfeitos[j].IndicadorEfeitosContrato))
-                    {
-                        throw new Exception("IndicadorEfeitosContrato do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].EntidadeRegistradora.Equals(listaOrdenada2[i].listaEfeitos[j].EntidadeRegistradora))
-                    {
-                        throw new Exception("EntidadeRegistradora do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].TipoEfeito.Equals(listaOrdenada2[i].listaEfeitos[j].TipoEfeito))
-                    {
-                        throw new Exception("TipoEfeito do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].BeneficiarioTitular.Equals(listaOrdenada2[i].listaEfeitos[j].BeneficiarioTitular))
-                    {
-                        throw new Exception("BeneficiarioTitular do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].RegrasDivisao.Equals(listaOrdenada2[i].listaEfeitos[j].RegrasDivisao))
-                    {
-                        throw new Exception("RegrasDivisao do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].ValorComprometido.Equals(listaOrdenada2[i].listaEfeitos[j].ValorComprometido))
-                    {
-                        string valorStr1 = listaOrdenada1[i].listaEfeitos[j].ValorComprometido.Replace('.', ',');
-                        string valorStr2 = listaOrdenada2[i].listaEfeitos[j].ValorComprometido.Replace('.', ',');
-                        double valorArq1 = double.Parse(valorStr1);
-                        double valorArq2 = double.Parse(valorStr2);
-                        if (!valorArq1.Equals(valorArq2))
-                        {
-                            throw new Exception("Valor do efeito não corresponde");
-                        }
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].DocumentoTitularDomicilio.Equals(listaOrdenada2[i].listaEfeitos[j].DocumentoTitularDomicilio))
-                    {
-                        throw new Exception("DocumentoTitularDomicilio do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].TipoConta.Equals(listaOrdenada2[i].listaEfeitos[j].TipoConta))
-                    {
-                        throw new Exception("TipoConta do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].COMPE.Equals(listaOrdenada2[i].listaEfeitos[j].COMPE))
-                    {
-                        throw new Exception("COMPE do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].ISPB.Equals(listaOrdenada2[i].listaEfeitos[j].ISPB))
-                    {
-                        throw new Exception("ISPB do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].Agencia.Equals(listaOrdenada2[i].listaEfeitos[j].Agencia))
-                    {
-                        throw new Exception("Agencia do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].NumeroContaPagamento.Equals(listaOrdenada2[i].listaEfeitos[j].NumeroContaPagamento))
-                    {
-                        throw new Exception("NumeroContaPagamento do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].NomeTitularDomicilio.Equals(listaOrdenada2[i].listaEfeitos[j].NomeTitularDomicilio))
-                    {
-                        throw new Exception("NomeTitularDomicilio do efeito não corresponde");
-                    }
-                    if (!listaOrdenada1[i].listaEfeitos[j].IDContrato.Equals(listaOrdenada2[i].listaEfeitos[j].IDContrato))
-                    {
-                        throw new Exception("IDContrato do efeito não corresponde");
-                    }
-                }
-                catch (Exception error)
-                {
-                    throw new Exception(error.Message);
-                }
-            }
-        }
-
-
-        private static void configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, List<UR> listaUnidadeRecebiveis, string dados)
+        private static UR008 configuraLinhaEfeitos(ref string[] efeitos, char delimiterChar, string dados)
         {
             string[] linhas = dados.Split(delimiterChar);
             string infoLinha = string.Empty;
@@ -191,25 +532,26 @@ namespace DoubleCheck
                 {
                     string texto = PegarConteudoForaAspas(linha, 0);
                     var urInfo = texto.Split(';');
-                    UR unidadeRecebivel = new UR(urInfo[0], urInfo[2], urInfo[3], DateTime.Parse(urInfo[4]));
+                    UR008 unidadeRecebivel = new UR008(urInfo[0], urInfo[1], urInfo[2], urInfo[3], urInfo[4]);
                     string efeitoStr = PegarConteudoEntreAspas(linha, 0);
                     if (!string.IsNullOrEmpty(efeitoStr))
                     {
                         efeitos = efeitoStr.Split('|');
                         foreach (string efeito in efeitos)
                         {
-                            Efeito efeitoLinha = new Efeito();
+                            Efeito008 efeitoLinha = new Efeito008();
                             string[] efeitoConfigurado = efeito.Split(';');
                             PopulaCamposEfeito(efeitoLinha, efeitoConfigurado);
                             unidadeRecebivel.listaEfeitos.Add(efeitoLinha);
                         }
                     }
-                    listaUnidadeRecebiveis.Add(unidadeRecebivel);
+                    return unidadeRecebivel;
                 }
             }
+            return null;
         }
 
-        private static void PopulaCamposEfeito(Efeito efeitoLinha, string[] efeitoConfigurado)
+        private static void PopulaCamposEfeito(Efeito008 efeitoLinha, string[] efeitoConfigurado)
         {
             efeitoLinha.Protocolo = efeitoConfigurado[0];
             efeitoLinha.IndicadorEfeitosContrato = efeitoConfigurado[1];
@@ -266,6 +608,11 @@ namespace DoubleCheck
                 return strLinha.Remove(i, j - i);
             }
             return texto;
+        }
+
+        private void cmb_EscolheAP_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
